@@ -9,18 +9,18 @@ function A.load()
         fuzzBall = 2,
         slimeHead = 3,
         flyingTriangle = 4,
-        five = 5,
-        six = 6,
-        seven = 7,
-        eight = 8,
-        nine = 9,
-        ten = 10,
-        eleven = 11,
-        twelve = 12
+        happyStalk = 5,
+        moebius = 6,
+        eyeBlob = 7,
+        wiggleCat = 8,
+        blocky = 9,
+        jellina = 10,
+        coolCarrot = 11,
+        twins = 12,
+        oozyEye = 13
     }
 
     LoadAnimalContent()
-    LoadAnimalSprites()
 
 end
 
@@ -40,12 +40,15 @@ function A.markRescued(a)
 
 end
 
-function LoadAnimalContent()
-
+function A.isDiscovered(i)
+    return animals[i].isDiscovered
 end
 
-function LoadAnimalSprites()
-
+function LoadAnimalContent()
+    for i=1, 13, 1 do
+        animals[i] = {}
+        animals[i].isDiscovered = false
+    end
 end
 
 return A

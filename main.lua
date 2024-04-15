@@ -12,15 +12,16 @@ Scenes = {
     GAMEOVER = 7
 }
 
-local CurrentScene
 local debug
+
+DBTXT = ""
 
 function love.load()
 
     debug = true
 
     CurrentScene = Scenes.RUNES
-    G.load()
+    G.load(debug)
 
 end
 
@@ -32,13 +33,22 @@ end
 function love.draw()
     G.draw()
 
+    love.graphics.reset()
+
     if debug == true then
         local x, y = love.mouse.getPosition()
-        love.graphics.drawf(x..", "..y, x-10, y-10, 40, "left")
+        love.graphics.printf(x..", "..y, x-10, y-10, 100, "left")
+        love.graphics.printf(DBTXT, 0, 0, 100, "left")
     end
 
 end
 
 function love.mousereleased(x, y, _, _, _)
     G.handleMouseClick(x, y)
+end
+
+function love.keyreleased(key)
+
+    G.keyreleased(key)
+
 end

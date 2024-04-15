@@ -10,84 +10,110 @@ local numRunePiecesTotal
 local runePlacement
 local currentLevel
 local runePlacementTarget
+local t
+local headerFont
+local nameFont
+local isModal
+local soundOn
+local prevScene
 
-function G.load()
+local scale
+
+function G.load(db)
 
     R.load()
     A.load()
+    C.load()
 
     numRunePiecesTotal = 5
     numRunePiecesUsed = 0
     runePlacement = R.resetRuneBoard()
     currentLevel = nil
 
+    t = 0
+    scale = .5
+
+    headerFont = love.graphics.newFont("/fonts/Courgette-Regular.ttf", 28)
+    nameFont = love.graphics.newImageFont("/fonts/nameFont.png", "abcdefghijklmnopqrstuvwxyz")
+
+    isModal = nil
+
+    if db and CurrentScene == Scenes.RUNES then
+        isModal = nil
+        currentLevel = 2
+    end
+
+    soundOn = true
+    prevScene = Scenes.ANIMALS
+
 end
 
 function G.update()
 
+    t = t + 1
+
 end
 
 function G.draw()
-    if currentScene == Scenes.TITLE then
-        DrawBackground(backgrounds.TITLE)
-    elseif currentScene == Scenes.INTRO then
-        DrawBackground(backgrounds.INTRO)
-    elseif currentScene == Scenes.RUNES then
-        DrawBackground(backgrounds.RUNES)
-        DrawTargetRune()
+    if CurrentScene == Scenes.TITLE then
+        DrawBackground(Scenes.TITLE)
+        DrawOtherSprites()
+    elseif CurrentScene == Scenes.INTRO then
+        DrawBackground(Scenes.TITLE)
+        DrawOtherSprites()
+    elseif CurrentScene == Scenes.RUNES then
+        DrawBackground(Scenes.RUNES)
         DrawCurrentRuneLines()
-    elseif currentScene == Scenes.ANIMALS then
-        DrawBackground(backgrounds.ANIMALS)
-        DrawPlaceholders()
+        DrawOtherSprites()
+    elseif CurrentScene == Scenes.ANIMALS then
+        DrawBackground(Scenes.ANIMALS)
         DrawAnimals()
-    elseif currentScene == Scenes.HELP then
-        DrawBackground(backgrounds.HELP)
-    -- elseif currentScene == Scenes.PROGRESS then //Not a current scene
-    elseif currentScene == Scenes.GAMEOVER then
-        DrawBackground(backgrounds.GAMEOVER)
+        DrawOtherSprites()
+    elseif CurrentScene == Scenes.HELP then
+        DrawBackground(Scenes.TITLE)
+        DrawBackground(Scenes.HELP)
+        DrawOtherSprites()
+    -- elseif CurrentScene == Scenes.PROGRESS then //Not a current scene
+    elseif CurrentScene == Scenes.GAMEOVER then
+        DrawBackground(Scenes.GAMEOVER)
     end
 
 end
 
-function G.routeMouseInput(mx, my)
-    if currentScene == Scenes.TITLE then
-    elseif currentScene == Scenes.INTRO then
-    elseif currentScene == Scenes.RUNES then
+function G.handleMouseClick(mx, my)
+    if CurrentScene == Scenes.TITLE then
+        if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), 517, 743, 56, 282) then
+            CurrentScene = Scenes.INTRO
+        end
+    elseif CurrentScene == Scenes.INTRO then
+        if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), 600, 780, 500, 580) then
+            CurrentScene = Scenes.ANIMALS
+        end
+    elseif CurrentScene == Scenes.RUNES then
         local buttonPress = CheckButtonsFirst(mx, my)
-        if buttonPress == nil then
+        if not buttonPress then
             local runeIndex = R.isRuneLineClick(mx, my)
             if runeIndex ~= nil then
-                R.toggleRune(runeIndex)
-            end
-        elseif buttonPress == 1 then --submit rune
-        elseif buttonPress == 2 then --mute
-        elseif buttonPress == 3 then --help
-        elseif buttonPress == 4 then --back to map
-        elseif buttonPress == 5 and confirmAction then --confirm leave rune
-        end
-    elseif currentScene == Scenes.ANIMALS then
-        if isModal then
-            --here we have button presses on the animal modal itself instead of map
-        else
-            local buttonPress == CheckButtonsFirst(mx, my)
-            if buttonPress == 1 then --1-12 are animal indices
-            elseif buttonPress == 2 then 
-            elseif buttonPress == 3 then
-            elseif buttonPress == 4 then
-            elseif buttonPress == 5 then
-            elseif buttonPress == 6 then
-            elseif buttonPress == 7 then
-            elseif buttonPress == 8 then
-            elseif buttonPress == 9 then
-            elseif buttonPress == 10 then
-            elseif buttonPress == 11 then
-            elseif buttonPress == 12 then
+                ToggleRune(runeIndex)
             end
         end
-    elseif currentScene == Scenes.HELP then
-        if H.isOverlap(mx, my)
-    --elseif currentScene == Scenes.PROGRESS then //not currently a scene
-    elseif currentScene == Scenes.GAMEOVER then
+    elseif CurrentScene == Scenes.ANIMALS then
+        local buttonPress = CheckButtonsFirst(mx, my)
+        if not buttonPress then
+            for i=1,13,1 do
+                local a = C.getAnimalSprite(i)
+                if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), a.x, a.x+(a.w*a.scaleMod*scale), a.y, a.y+(a.h*a.scaleMod*scale)) then
+                    isModal = i
+                    return
+                end
+            end
+        end
+    elseif CurrentScene == Scenes.HELP then
+        if H.checkOverlap(mx, my, 50, 100, 50, 100) then
+            CurrentScene = prevScene
+        end
+    --elseif CurrentScene == Scenes.PROGRESS then //not currently a scene
+    elseif CurrentScene == Scenes.GAMEOVER then
     end
 end
 
@@ -97,33 +123,234 @@ end
 
 function DrawCurrentRuneLines()
     for k, v in ipairs(runePlacement) do
+        local p = R.getRunePlacement(k)
         if v == 1 then
-            local runeToDraw = horizRune
-            if (9 % k > 4) or (9 % k == 0) then
-                runeToDraw = vertRune
+            local runeToDraw = C.getSprite(20)
+            if ((k % 9) > 4) or ((k % 9) == 0) then
+                runeToDraw = C.getSprite(23)
             end
-            p = R.getRunePlacement(k)
-            love.graphics.draw(runeToDraw, p[1], p[2])
+            love.graphics.draw(runeToDraw.img, p[1]-16, p[2]-12, 0, scale, scale)
+        elseif R.isRuneLineClick(love.mouse.getX(), love.mouse.getY()) == k then
+
+            local runeToDraw = C.getSprite(22)
+            if ((k % 9) > 4) or ((k % 9) == 0) then
+                runeToDraw = C.getSprite(25)
+                love.graphics.draw(runeToDraw.img, p[1]-18, p[2]-2, 0, scale, scale)
+            else
+                love.graphics.draw(runeToDraw.img, p[1]-6, p[2]-16, 0, scale, scale)
+            end
+
         end
     end
 end
 
 function DrawBackground(img)
+    love.graphics.draw(C.getSprite(img).img,0,0,0,scale,scale)
 end
 
-function DrawTargetRune()
+function DrawOtherSprites()
+    local mx = love.mouse.getX()
+    local my = love.mouse.getY()
+    if CurrentScene == Scenes.TITLE then
+        --title text
+        love.graphics.draw(C.getSprite(13).img, 0, 0, 0, scale, scale)
+        --attribution before it fades
+        if t <= 100 then
+            love.graphics.draw(C.getSprite(12).img, 0, 0, 0, scale, scale)
+        else
+            love.graphics.draw(C.getSprite(8).img, 0, 0, 0, scale, scale)
+            if H.checkOverlap(mx, my, 517, 743, 56, 282) then
+                love.graphics.draw(C.getSprite(9).img, 0, 0, 0, scale, scale)
+            end
+        end
+    elseif CurrentScene == Scenes.INTRO then
+        DrawBackground(Scenes.INTRO)
+        --next button highlight
+        if H.checkOverlap(mx, my, 600, 780, 500, 580) then
+            love.graphics.draw(C.getSprite(11).img, 0, 0, 0, scale, scale)
+        end
+        --next button text
+        love.graphics.draw(C.getSprite(10).img, 0, 0, 0, scale, scale)
+        --text
+        love.graphics.setFont(headerFont)
+        love.graphics.printf("An evil supervillain has kidnapped all of the animals on your home planet. But you can fight back! You are trained in the ancient art of rune calling: using an animal's rune to summon it.",
+            50, 150, 700, "center")
+            love.graphics.printf("Summon all of the missing animals back to their natural habitats by recreating the runes you've discovered on your magical stone tablet using your runesticks.",
+            50, 360, 700, "center")
+    elseif CurrentScene == Scenes.RUNES then
+        --back to map
+        if H.checkOverlap(mx, my, 0, 100, 0, 100) then
+            love.graphics.draw(C.getSprite(15).img, 0, 0, 0, scale, scale)
+        end
+        love.graphics.draw(C.getSprite(14).img, 0, 0, 0, scale, scale)
+        --submit
+        if H.checkOverlap(mx, my, 25, 235, 500, 580) then
+            love.graphics.draw(C.getSprite(17).img, 0, 480, 0, scale, scale)
+        end
+        love.graphics.draw(C.getSprite(16).img, 0, 480, 0, scale, scale)
+
+        --draw target rune
+        if currentLevel ~= nil then
+            love.graphics.draw(C.getRuneSprite(currentLevel).img, 60, 125, 0, scale, scale)
+        end
+
+        DrawMenuButtons()
+    elseif CurrentScene == Scenes.ANIMALS then
+        if isModal ~= nil then
+            love.graphics.setColor(0,0,0,.8)
+            love.graphics.rectangle("fill",0,0,800,600)
+            love.graphics.reset()
+        --amStart
+            if A.isDiscovered(isModal) then
+                love.graphics.draw(C.getSprite(35).img, 0, 0, 0, scale, scale)
+                love.graphics.draw(C.getAnimalSprite(isModal).img, 0, 0, 0, scale, scale)
+            else
+                love.graphics.draw(C.getSprite(34).img, 0, 0, 0, scale, scale)
+                if H.checkOverlap(mx, my, 480, 594, 405, 475) then
+                    love.graphics.draw(C.getSprite(31).img, 0, 0, 0, scale, scale)
+                end
+                love.graphics.draw(C.getSprite(30).img, 0, 0, 0, scale, scale)
+            end
+            if H.checkOverlap(mx, my, 50, 100, 50, 100) then
+                love.graphics.draw(C.getSprite(33).img, 0, 0, 0, scale, scale)
+            end
+            love.graphics.draw(C.getSprite(32).img, 0, 0, 0, scale, scale)
+            --draw animal's rune
+            love.graphics.draw(C.getRuneSprite(isModal).img, 456, 230, 0, scale+.1, scale+.1)
+        else
+            DrawMenuButtons()
+        end
+    elseif CurrentScene == Scenes.HELP then
+        if H.checkOverlap(mx, my, 50, 100, 50, 100) then
+            love.graphics.draw(C.getSprite(33).img, 0, 0, 0, scale, scale)
+        end
+        love.graphics.draw(C.getSprite(32).img, 0, 0, 0, scale, scale)
+    -- elseif CurrentScene == Scenes.PROGRESS then //Not a current scene
+    elseif CurrentScene == Scenes.GAMEOVER then
+        DrawBackground(Scenes.GAMEOVER)
+    end
 end
 
-function DrawPlaceholders()
+function DrawMenuButtons()
+
+    if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), 680, 680+(77*scale), 0, 90*scale) then
+        love.graphics.draw(C.getSprite(19).img, 680, 0, 0, scale, scale)
+    end
+    love.graphics.draw(C.getSprite(18).img, 680, 0, 0, scale, scale)
+--sound
+    if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), 720, 720+(156*scale), 0, 84*scale) then
+        love.graphics.draw(C.getSprite(27).img, 720, 0, 0, scale, scale)
+    end
+    love.graphics.draw(C.getSprite(26).img, 720, 0, 0, scale, scale)
+    if soundOff then
+        love.graphics.draw(C.getSprite(28).img, 720, 0, 0, scale, scale)
+    end
+
 end
 
 function DrawAnimals()
+    for i=1, 13, 1 do
+        local p = C.getAnimalHighlight(i)
+        local a = C.getAnimalSprite(i)
+        local d = A.isDiscovered(i)
+        local b = C.getAnimalPlaceholder(i)
+        if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), p.x, p.x+(a.w*a.scaleMod*scale), p.y, p.y+(a.h*a.scaleMod*scale))then
+            if d then
+                love.graphics.draw(p.img, p.x, p.y, 0, scale*a.scaleMod, scale*a.scaleMod)
+            else
+                local mod = (t%100)*.0001
+                local rot = (t%100)*.0001
+                if isModal ~= nil then
+                    mod = 0
+                    rot = 0
+                end
+                love.graphics.draw(b.img, b.x-mod, b.y-mod, rot, scale*a.scaleMod+mod, scale*a.scaleMod+mod)
+            end
+        elseif d then
+            love.graphics.draw(a.img, a.x, a.y, 0, scale*a.scaleMod, scale*a.scaleMod)
+        else
+            love.graphics.draw(b.img, b.x, b.y, 0, scale*a.scaleMod, scale*a.scaleMod)
+        end
+    end
 end
 
 --if a button was pressed return the button index, otherwise return nil
-function CheckButtonsFirst()
-    --back button
-    --confirm button
+function CheckButtonsFirst(mx, my)
+    if CurrentScene == Scenes.ANIMALS and isModal == nil then
+        --help button
+        if H.checkOverlap(mx, my, 680, 716, 0, 45) then
+            CurrentScene = Scenes.HELP
+            prevScene = Scenes.ANIMALS
+            return true
+        end
+        --sound button
+        if H.checkOverlap(mx, my, 720, 780, 0, 45) then
+            soundOff = not soundOff
+        end
+    elseif CurrentScene == Scenes.ANIMALS then
+        if H.checkOverlap(mx, my, 50, 100, 50, 100) then
+            isModal = nil
+            return true
+        elseif H.checkOverlap(mx, my, 480, 594, 405, 475) then
+            currentLevel = isModal
+            isModal = nil
+            CurrentScene = Scenes.RUNES
+            return true
+        end
+    elseif CurrentScene == Scenes.RUNES then
+        --help button
+        if H.checkOverlap(mx, my, 680, 716, 0, 45) then
+            CurrentScene = Scenes.HELP
+            prevScene = Scenes.RUNES
+            return true
+        end
+        --sound button
+        if H.checkOverlap(mx, my, 720, 780, 0, 45) then
+            soundOff = not soundOff
+            return true
+        end
+    end
+
+    return false
+
+end
+
+function G.keyreleased(key)
+
+    if key == "w" then
+        local vals = "{"
+        for i=1,39,1 do
+            vals = vals ..runePlacement[i]..", "
+        end
+        vals = vals..runePlacement[40].."}"
+        love.system.setClipboardText(vals)
+    elseif key == "1" then
+            currentLevel = 1
+    elseif key == "2" then
+        currentLevel = 2
+    elseif key == "3" then
+        currentLevel = 3
+    elseif key == "4" then
+        currentLevel = 4
+    elseif key == "5" then
+        currentLevel = 5
+    elseif key == "6" then
+        currentLevel = 6
+    elseif key == "7" then
+        currentLevel = 7
+    elseif key == "8" then
+        currentLevel = 8
+    elseif key == "9" then
+        currentLevel = 9
+    elseif key == 'u' then
+        currentLevel = 10
+    elseif key == 'i' then
+        currentLevel = 11
+    elseif key == "o" then
+        currentLevel = 12
+    elseif key == "p" then
+        currentLevel = 13
+    end
 
 end
 

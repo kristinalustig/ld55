@@ -20,8 +20,8 @@ function H.getMouseLoc(mx, my)
 
 end
 
-function H.handleMouseClick(mx, my)
-
+function H.checkOverlap(mx, my, x1, x2, y1, y2)
+    return mx >= x1 and mx <= x2 and my >= y1 and my <= y2
 end
 
 function H.getIsTransition()
