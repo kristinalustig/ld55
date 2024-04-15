@@ -397,33 +397,7 @@ function CreateImageObject(ind, img, x, y, w, h, scaleMod)
 end
 
 function C.createAnimalBlurb(ind)
-    if ind == 1 then
-        return ""
-    elseif ind == 2 then
-        return ""
-    elseif ind == 3 then
-        return ""
-    elseif ind == 4 then
-        return ""
-    elseif ind == 5 then
-        return ""
-    elseif ind == 6 then
-        return ""
-    elseif ind == 7 then
-        return ""
-    elseif ind == 8 then
-        return ""
-    elseif ind == 9 then
-        return ""
-    elseif ind == 10 then
-        return ""
-    elseif ind == 11 then
-        return ""
-    elseif ind == 12 then
-        return ""
-    elseif ind == 13 then
-        return ""
-    end
+   return ""
 end
 
 return C

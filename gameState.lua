@@ -22,6 +22,7 @@ local hasVisitedGameOver
 local showError
 local showErrorStart
 local headerFontSm
+local nameFontSm
 
 local scale
 
@@ -44,6 +45,7 @@ function G.load(db)
     headerFont = love.graphics.newFont("/fonts/Courgette-Regular.ttf", 28)
     headerFontSm = love.graphics.newFont("/fonts/Courgette-Regular.ttf", 20)
     nameFont = love.graphics.newFont("/fonts/GloriaHallelujah-Regular.ttf", 36)
+    nameFontSm = love.graphics.newFont("/fonts/GloriaHallelujah-Regular.ttf", 22)
 
     isModal = nil
 
@@ -51,7 +53,19 @@ function G.load(db)
         isModal = nil
         currentLevel = 2
     elseif CurrentScene == Scenes.ANIMALS then
+        A.markRescued(1)
+        A.markRescued(2)
         A.markRescued(3)
+        A.markRescued(4)
+        A.markRescued(5)
+        A.markRescued(6)
+        A.markRescued(7)
+        A.markRescued(8)
+        A.markRescued(9)
+        A.markRescued(10)
+        A.markRescued(11)
+        A.markRescued(12)
+        A.markRescued(13)
     end
 
     soundOff = false
@@ -310,11 +324,10 @@ function DrawOtherSprites()
             else
                 love.graphics.draw(C.getBigRuneSprite(isModal).img, 620, 50, 0, scale*.25, scale*.25)
                 love.graphics.setFont(nameFont)
-                --love.graphics.printf(A.getName(isModal))
-                love.graphics.printf("Fluffy", 300, 160, 300, "center")
+                love.graphics.printf(A.getAnimalName(isModal), 300, 160, 300, "center")
                 love.graphics.reset()
-                love.graphics.setFont(headerFont)
-                --love.graphics.printf(A.getDesc(isModal))
+                love.graphics.setFont(nameFontSm)
+                love.graphics.printf(A.getAnimalInfo(isModal),392, 324, 300, "left")
             end
         else
             DrawMenuButtons()
