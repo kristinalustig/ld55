@@ -1,5 +1,5 @@
 name: Rune Caller - by kristinamay for Ludum Dare 55
-version: 0.0.1
+version: 0.0.2
 assets:
   - "*.lua"
   - fonts/**/*
@@ -7,7 +7,6 @@ assets:
   - audio/**
 targets:
   - love
-  - web
   - win-32
   - win-64
   - mac

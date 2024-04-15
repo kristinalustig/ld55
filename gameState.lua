@@ -107,6 +107,9 @@ function G.draw()
 end
 
 function G.handleMouseClick(mx, my)
+    if isAnimating then
+        return
+    end
     if CurrentScene == Scenes.TITLE then
         if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), 517, 743, 56, 282) then
             CurrentScene = Scenes.INTRO
@@ -119,6 +122,13 @@ function G.handleMouseClick(mx, my)
         local buttonPress = CheckButtonsFirst(mx, my)
         if not buttonPress then
             local runeIndex = R.isRuneLineClick(mx, my)
+            local num = C.getNumberPieces(currentLevel) - numRunePiecesUsed
+            if num == 0 and runeIndex ~= nil then
+                if runePlacement[runeIndex] == 1 then
+                    ToggleRune(runeIndex)
+                end
+                return
+            end
             if runeIndex ~= nil then
                 ToggleRune(runeIndex)
             end
@@ -233,7 +243,12 @@ function DrawOtherSprites()
         end
         love.graphics.draw(C.getSprite(16).img, 0, 480, 0, scale, scale)
         love.graphics.setFont(headerFont)
-        love.graphics.setColor(0,0,0,1)
+        local num = C.getNumberPieces(currentLevel) - numRunePiecesUsed
+        if num == 0 then
+            love.graphics.setColor(1,0,0,1)
+        else
+            love.graphics.setColor(0,0,0,1)
+        end
         love.graphics.printf(C.getNumberPieces(currentLevel) - numRunePiecesUsed, 69, 272, 40, "center")
         love.graphics.reset()
 
@@ -305,10 +320,18 @@ function DrawOtherSprites()
             DrawMenuButtons()
         end
     elseif CurrentScene == Scenes.HELP then
+        love.graphics.draw(C.getSprite(2).img, 100, 0, 0, scale, scale)
         if H.checkOverlap(mx, my, 50, 100, 50, 100) then
             love.graphics.draw(C.getSprite(33).img, 0, 0, 0, scale, scale)
+
         end
+        love.graphics.setFont(headerFont)
+        love.graphics.printf("An evil supervillain has kidnapped all of the animals on your home planet. But you can fight back! You are trained in the ancient art of rune calling: using an animal's rune to summon it.",
+            50, 150, 700, "center")
+        love.graphics.printf("Summon all of the missing animals back to their natural habitats by recreating the runes you've discovered on your magical stone tablet using your runesticks.",
+            50, 360, 700, "center")
         love.graphics.draw(C.getSprite(32).img, 0, 0, 0, scale, scale)
+
     -- elseif CurrentScene == Scenes.PROGRESS then //Not a current scene
     elseif CurrentScene == Scenes.GAMEOVER then
         DrawBackground(Scenes.GAMEOVER)
@@ -340,7 +363,9 @@ function DrawAnimals()
         local b = C.getAnimalPlaceholder(i)
         if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), p.x, p.x+(a.w*a.scaleMod*scale), p.y, p.y+(a.h*a.scaleMod*scale))then
             if d then
-                love.graphics.draw(p.img, p.x, p.y, 0, scale*a.scaleMod, scale*a.scaleMod)
+                if isModal == nil then
+                    love.graphics.draw(p.img, p.x, p.y, 0, scale*a.scaleMod, scale*a.scaleMod)
+                end
                 love.graphics.draw(a.img, a.x, a.y, 0, scale*a.scaleMod, scale*a.scaleMod)
             else
                 local mod = (t%100)*.0001
@@ -372,6 +397,14 @@ function ResetAll(didFinish)
     showError = false
     showErrorStart = 0
     CurrentScene = Scenes.ANIMALS
+    runePlacement = ResetRuneBoard()
+end
+
+function ResetRuneBoard()
+    for i=1,40,1 do
+        runePlacement[i] = 0
+    end
+    return runePlacement
 end
 
 --if a button was pressed return the button index, otherwise return nil
@@ -409,6 +442,7 @@ function CheckButtonsFirst(mx, my)
             CurrentScene = Scenes.RUNES
             C.stopAudio()
             C.playAudio(1)
+            runePlacement = ResetRuneBoard()
             return true
         end
     elseif CurrentScene == Scenes.RUNES then
@@ -432,6 +466,7 @@ function CheckButtonsFirst(mx, my)
         --back to map
         if H.checkOverlap(mx, my, 0, 140, 0, 80) then
             ResetAll(false)
+            return true
         end
 
         --submit button

@@ -167,6 +167,9 @@ function C.getBigRuneSprite(i)
 end
 
 function C.getNumberPieces(i)
+    if i == nil then
+        return 0
+    end
     local c = 0
     for j=1, 40, 1 do
         if runeDetails[i][j] == 1 then
@@ -188,6 +191,9 @@ function C.checkCorrectAnswer(ans, num)
 end
 
 function C.getRunePiecesUsed(r)
+    if r == nil then
+        return 0
+    end
     local c = 0
     for j=1, 40, 1 do
         if r[j] == 1 then
