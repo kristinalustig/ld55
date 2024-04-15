@@ -37,7 +37,17 @@ function A.feedAnimal(a)
 end
 
 function A.markRescued(a)
+    animals[a].isDiscovered = true
+end
 
+function A.getRescuedCount()
+    local r = 0
+    for i=1,13,1 do
+        if animals[i].isDiscovered then
+            r = r + 1
+        end
+    end
+    return r
 end
 
 function A.isDiscovered(i)

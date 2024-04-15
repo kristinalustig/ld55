@@ -11,6 +11,11 @@ local runeSpritesBig
 local runeXYPlacement
 local runeDetails
 
+local theme
+local womp
+local ooh
+local tada
+
 function C.load()
     images = {}
     animalSprites = {}
@@ -20,6 +25,11 @@ function C.load()
     runeXYPlacement = {}
     runeSpritesBig = {}
     runeDetails = {}
+
+    theme = love.audio.newSource("audio/theme.mp3", "stream")
+    womp = love.audio.newSource("audio/womp.mp3", "static")
+    ooh = love.audio.newSource("audio/ooh.mp3", "static")
+    tada = love.audio.newSource("audio/tada.mp3", "static")
 
     C.loadRunes()
 
@@ -33,7 +43,7 @@ function C.load()
     table.insert(images, CreateImageObject(Scenes.ANIMALS, "images/bgAnimals", 0, 0))
     table.insert(images, CreateImageObject(Scenes.HELP, "images/bgStart", 0, 0))
     table.insert(images, "") --keep numbering consistent
-    table.insert(images, CreateImageObject(Scenes.GAMEOVER, "images/bgRunes", 0, 0))
+    table.insert(images, CreateImageObject(Scenes.GAMEOVER, "images/bgGameOver", 0, 0))
 
     --Misc buttons / highlights
     table.insert(images, CreateImageObject(8, "images/startButton", 0, 0))
@@ -102,6 +112,36 @@ function C.load()
 
 end
 
+function C.playAudio(n)
+    if soundOff then return end
+    if n == 1 then
+        theme:play()
+        theme:setLooping(true)
+    elseif n == 2 then
+        ooh:play()
+    elseif n == 3 then
+        tada:play()
+    elseif n == 4 then
+        womp:play()
+    end
+end
+
+function C.stopAudio()
+    theme:stop()
+    ooh:stop()
+    tada:stop()
+    womp:stop()
+end
+
+function C.isAnythingPlaying()
+    return theme:isPlaying() or womp:isPlaying() or tada:isPlaying() or ooh:isPlaying()
+end
+
+function C.startAudio()
+    theme:play()
+    theme:setLooping(true)
+end
+
 function C.getSprite(i)
     return images[i]
 end
@@ -121,6 +161,42 @@ end
 function C.getRuneSprite(i)
     return runeSprites[i]
 end
+
+function C.getBigRuneSprite(i)
+    return runeSpritesBig[i]
+end
+
+function C.getNumberPieces(i)
+    local c = 0
+    for j=1, 40, 1 do
+        if runeDetails[i][j] == 1 then
+            c = c + 1
+        end
+    end
+    return c
+end
+
+function C.checkCorrectAnswer(ans, num)
+    local correct = 0
+    for i=1,40,1 do
+        if ans[i] == runeDetails[num][i] and ans[i] == 1 then
+            correct = correct + 1
+        end
+    end
+    return correct
+
+end
+
+function C.getRunePiecesUsed(r)
+    local c = 0
+    for j=1, 40, 1 do
+        if r[j] == 1 then
+            c = c + 1
+        end
+    end
+    return c
+end
+
 
 --for each rune, the correct pattern.
 function C.loadRunes()

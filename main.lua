@@ -14,13 +14,15 @@ Scenes = {
 
 local debug
 
+soundOff = false
+
 DBTXT = ""
 
 function love.load()
 
-    debug = true
+    debug = false
 
-    CurrentScene = Scenes.RUNES
+    CurrentScene = Scenes.TITLE
     G.load(debug)
 
 end
@@ -36,9 +38,11 @@ function love.draw()
     love.graphics.reset()
 
     if debug == true then
+        love.graphics.setColor(0,0,0,1)
         local x, y = love.mouse.getPosition()
         love.graphics.printf(x..", "..y, x-10, y-10, 100, "left")
         love.graphics.printf(DBTXT, 0, 0, 100, "left")
+        love.graphics.reset()
     end
 
 end
@@ -49,6 +53,6 @@ end
 
 function love.keyreleased(key)
 
-    G.keyreleased(key)
+    G.keyreleased(key, debug)
 
 end

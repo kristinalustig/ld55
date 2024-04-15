@@ -14,8 +14,14 @@ local t
 local headerFont
 local nameFont
 local isModal
-local soundOn
 local prevScene
+local isAnimating
+local animStart
+local totalCorrect
+local hasVisitedGameOver
+local showError
+local showErrorStart
+local headerFontSm
 
 local scale
 
@@ -24,6 +30,8 @@ function G.load(db)
     R.load()
     A.load()
     C.load()
+
+    C.playAudio(1)
 
     numRunePiecesTotal = 5
     numRunePiecesUsed = 0
@@ -34,23 +42,41 @@ function G.load(db)
     scale = .5
 
     headerFont = love.graphics.newFont("/fonts/Courgette-Regular.ttf", 28)
-    nameFont = love.graphics.newImageFont("/fonts/nameFont.png", "abcdefghijklmnopqrstuvwxyz")
+    headerFontSm = love.graphics.newFont("/fonts/Courgette-Regular.ttf", 20)
+    nameFont = love.graphics.newFont("/fonts/GloriaHallelujah-Regular.ttf", 36)
 
     isModal = nil
 
     if db and CurrentScene == Scenes.RUNES then
         isModal = nil
         currentLevel = 2
+    elseif CurrentScene == Scenes.ANIMALS then
+        A.markRescued(3)
     end
 
-    soundOn = true
+    soundOff = false
     prevScene = Scenes.ANIMALS
+
+    isAnimating = false
+    animStart = 0
+
+    totalCorrect = 0
+    hasVisitedGameOver = false
+
+    showError = false
+    showErrorStart = 0
 
 end
 
 function G.update()
 
     t = t + 1
+
+    numRunePiecesUsed = C.getRunePiecesUsed(runePlacement)
+
+    if not C.isAnythingPlaying() then
+        C.playAudio(1)
+    end
 
 end
 
@@ -99,11 +125,16 @@ function G.handleMouseClick(mx, my)
         end
     elseif CurrentScene == Scenes.ANIMALS then
         local buttonPress = CheckButtonsFirst(mx, my)
+        if isModal then
+            return
+        end
         if not buttonPress then
             for i=1,13,1 do
                 local a = C.getAnimalSprite(i)
                 if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), a.x, a.x+(a.w*a.scaleMod*scale), a.y, a.y+(a.h*a.scaleMod*scale)) then
                     isModal = i
+                    C.stopAudio()
+                    C.playAudio(2)
                     return
                 end
             end
@@ -122,6 +153,11 @@ function ToggleRune(r)
 end
 
 function DrawCurrentRuneLines()
+    if isAnimating and animStart < 100 then
+        love.graphics.setColor(1,1,1,1-animStart/100)
+    elseif isAnimating then
+        love.graphics.setColor(1,1,1,0)
+    end
     for k, v in ipairs(runePlacement) do
         local p = R.getRunePlacement(k)
         if v == 1 then
@@ -142,10 +178,15 @@ function DrawCurrentRuneLines()
 
         end
     end
+    love.graphics.reset()
 end
 
 function DrawBackground(img)
-    love.graphics.draw(C.getSprite(img).img,0,0,0,scale,scale)
+    if CurrentScene ~= Scenes.GAMEOVER then
+        love.graphics.draw(C.getSprite(img).img,0,0,0,scale,scale)
+    else
+        love.graphics.draw(C.getSprite(img).img)
+    end
 end
 
 function DrawOtherSprites()
@@ -157,6 +198,9 @@ function DrawOtherSprites()
         --attribution before it fades
         if t <= 100 then
             love.graphics.draw(C.getSprite(12).img, 0, 0, 0, scale, scale)
+            love.graphics.setColor(1,1,1,1-(t/100))
+            love.graphics.draw(C.getSprite(29).img, 0, 0, 0, scale, scale)
+            love.graphics.reset()
         else
             love.graphics.draw(C.getSprite(8).img, 0, 0, 0, scale, scale)
             if H.checkOverlap(mx, my, 517, 743, 56, 282) then
@@ -179,7 +223,7 @@ function DrawOtherSprites()
             50, 360, 700, "center")
     elseif CurrentScene == Scenes.RUNES then
         --back to map
-        if H.checkOverlap(mx, my, 0, 100, 0, 100) then
+        if H.checkOverlap(mx, my, 0, 140, 0, 80) then
             love.graphics.draw(C.getSprite(15).img, 0, 0, 0, scale, scale)
         end
         love.graphics.draw(C.getSprite(14).img, 0, 0, 0, scale, scale)
@@ -188,6 +232,10 @@ function DrawOtherSprites()
             love.graphics.draw(C.getSprite(17).img, 0, 480, 0, scale, scale)
         end
         love.graphics.draw(C.getSprite(16).img, 0, 480, 0, scale, scale)
+        love.graphics.setFont(headerFont)
+        love.graphics.setColor(0,0,0,1)
+        love.graphics.printf(C.getNumberPieces(currentLevel) - numRunePiecesUsed, 69, 272, 40, "center")
+        love.graphics.reset()
 
         --draw target rune
         if currentLevel ~= nil then
@@ -195,6 +243,29 @@ function DrawOtherSprites()
         end
 
         DrawMenuButtons()
+
+        if isAnimating and animStart < 100 then
+            love.graphics.draw(C.getBigRuneSprite(currentLevel).img, 260+(100-animStart), 80+(100-animStart), 0, (.5*(animStart/100)), (.5*(animStart/100)))
+            animStart = animStart + 1
+        elseif isAnimating and animStart < 200 then
+            love.graphics.draw(C.getBigRuneSprite(currentLevel).img, 260, 80, 0, scale, scale)
+            animStart = animStart + 1
+        elseif isAnimating then
+            ResetAll(true)
+            return
+        end
+
+        if showError and showErrorStart < 100 then
+            showErrorStart = showErrorStart + 1
+            love.graphics.setFont(headerFontSm)
+            love.graphics.setColor(0,0,0,1)
+            love.graphics.printf("You've placed "..totalCorrect.." pieces correctly.",304, 520, 400, "center")
+            love.graphics.reset()
+        elseif showError then
+            showError = false
+            showErrorStart = 0
+        end
+
     elseif CurrentScene == Scenes.ANIMALS then
         if isModal ~= nil then
             love.graphics.setColor(0,0,0,.8)
@@ -203,7 +274,10 @@ function DrawOtherSprites()
         --amStart
             if A.isDiscovered(isModal) then
                 love.graphics.draw(C.getSprite(35).img, 0, 0, 0, scale, scale)
-                love.graphics.draw(C.getAnimalSprite(isModal).img, 0, 0, 0, scale, scale)
+                local animal = C.getAnimalSprite(isModal)
+                local placement = 212 - .25*animal.w
+                local py = 290 - .25*animal.h
+                love.graphics.draw(C.getAnimalSprite(isModal).img, placement, py, 0, scale, scale)
             else
                 love.graphics.draw(C.getSprite(34).img, 0, 0, 0, scale, scale)
                 if H.checkOverlap(mx, my, 480, 594, 405, 475) then
@@ -216,7 +290,17 @@ function DrawOtherSprites()
             end
             love.graphics.draw(C.getSprite(32).img, 0, 0, 0, scale, scale)
             --draw animal's rune
-            love.graphics.draw(C.getRuneSprite(isModal).img, 456, 230, 0, scale+.1, scale+.1)
+            if not A.isDiscovered(isModal) then
+                love.graphics.draw(C.getRuneSprite(isModal).img, 456, 230, 0, scale+.1, scale+.1)
+            else
+                love.graphics.draw(C.getBigRuneSprite(isModal).img, 620, 50, 0, scale*.25, scale*.25)
+                love.graphics.setFont(nameFont)
+                --love.graphics.printf(A.getName(isModal))
+                love.graphics.printf("Fluffy", 300, 160, 300, "center")
+                love.graphics.reset()
+                love.graphics.setFont(headerFont)
+                --love.graphics.printf(A.getDesc(isModal))
+            end
         else
             DrawMenuButtons()
         end
@@ -257,6 +341,7 @@ function DrawAnimals()
         if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), p.x, p.x+(a.w*a.scaleMod*scale), p.y, p.y+(a.h*a.scaleMod*scale))then
             if d then
                 love.graphics.draw(p.img, p.x, p.y, 0, scale*a.scaleMod, scale*a.scaleMod)
+                love.graphics.draw(a.img, a.x, a.y, 0, scale*a.scaleMod, scale*a.scaleMod)
             else
                 local mod = (t%100)*.0001
                 local rot = (t%100)*.0001
@@ -274,6 +359,21 @@ function DrawAnimals()
     end
 end
 
+function ResetAll(didFinish)
+    if didFinish then
+        A.markRescued(currentLevel)
+        isModal = currentLevel
+    end
+    animStart = 0
+    isAnimating = false
+    t = 0
+    currentLevel = nil
+    totalCorrect = 0
+    showError = false
+    showErrorStart = 0
+    CurrentScene = Scenes.ANIMALS
+end
+
 --if a button was pressed return the button index, otherwise return nil
 function CheckButtonsFirst(mx, my)
     if CurrentScene == Scenes.ANIMALS and isModal == nil then
@@ -286,15 +386,29 @@ function CheckButtonsFirst(mx, my)
         --sound button
         if H.checkOverlap(mx, my, 720, 780, 0, 45) then
             soundOff = not soundOff
+            if soundOff then
+                C.stopAudio()
+            else
+                C.playAudio(1)
+            end
+            return true
         end
     elseif CurrentScene == Scenes.ANIMALS then
         if H.checkOverlap(mx, my, 50, 100, 50, 100) then
             isModal = nil
+            if A.getRescuedCount() == 13 and not hasVisitedGameOver then
+                CurrentScene = Scenes.GAMEOVER
+                hasVisitedGameOver = true
+            else
+                CurrentScene = Scenes.ANIMALS
+            end
             return true
         elseif H.checkOverlap(mx, my, 480, 594, 405, 475) then
             currentLevel = isModal
             isModal = nil
             CurrentScene = Scenes.RUNES
+            C.stopAudio()
+            C.playAudio(1)
             return true
         end
     elseif CurrentScene == Scenes.RUNES then
@@ -307,7 +421,36 @@ function CheckButtonsFirst(mx, my)
         --sound button
         if H.checkOverlap(mx, my, 720, 780, 0, 45) then
             soundOff = not soundOff
+            if soundOff then
+                C.stopAudio()
+            else
+                C.playAudio(1)
+            end
             return true
+        end
+
+        --back to map
+        if H.checkOverlap(mx, my, 0, 140, 0, 80) then
+            ResetAll(false)
+        end
+
+        --submit button
+        if H.checkOverlap(mx, my, 25, 235, 500, 580) then
+            local isCorrect = SubmitAnswer()
+            if isCorrect then
+                --play happy sound
+                C.stopAudio()
+                C.playAudio(3)
+                --start animation of rune
+                isAnimating = true
+            else
+                showError = true
+                C.stopAudio()
+                C.playAudio(4)
+                lg.printf("Your rune has "..totalCorrect.." pieces placed correctly.",300, 450, 400, "center")
+                --play sad sound
+                --popover saying x number that is correct
+            end
         end
     end
 
@@ -315,7 +458,29 @@ function CheckButtonsFirst(mx, my)
 
 end
 
-function G.keyreleased(key)
+function SubmitAnswer()
+
+    totalCorrect = C.checkCorrectAnswer(runePlacement, currentLevel)
+
+    if totalCorrect == C.getNumberPieces(currentLevel) then
+        return true
+    else
+        return false
+    end
+
+end
+
+function G.keyreleased(key, debug)
+
+    if key == "b" and CurrentScene == Scenes.GAMEOVER then
+        CurrentScene = Scenes.ANIMALS
+        hasVisitedGameOver = true
+        return
+    end
+
+    if not debug then
+        return
+    end
 
     if key == "w" then
         local vals = "{"
