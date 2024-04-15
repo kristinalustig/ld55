@@ -23,6 +23,9 @@ function love.load()
     debug = false
 
     CurrentScene = Scenes.TITLE
+    if debug == true then
+        CurrentScene = Scenes.ANIMALS
+    end
     G.load(debug)
 
 end

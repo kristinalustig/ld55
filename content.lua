@@ -15,6 +15,7 @@ local theme
 local womp
 local ooh
 local tada
+local animalSounds
 
 function C.load()
     images = {}
@@ -31,10 +32,26 @@ function C.load()
     ooh = love.audio.newSource("audio/ooh.mp3", "static")
     tada = love.audio.newSource("audio/tada.mp3", "static")
 
+    animalSounds = {}
+
     C.loadRunes()
 
     createPlaceholder = false
     createBigRune = false
+
+    table.insert(animalSounds, love.audio.newSource("audio/m.mp3","static"))--1
+    table.insert(animalSounds, love.audio.newSource("audio/e.mp3","static"))--2
+    table.insert(animalSounds, love.audio.newSource("audio/f.mp3","static"))--3
+    table.insert(animalSounds, love.audio.newSource("audio/h.mp3","static"))--4
+    table.insert(animalSounds, love.audio.newSource("audio/b.mp3","static"))--5
+    table.insert(animalSounds, love.audio.newSource("audio/d.mp3","static"))--6
+    table.insert(animalSounds, love.audio.newSource("audio/l.mp3","static"))--7
+    table.insert(animalSounds, love.audio.newSource("audio/a.mp3","static"))--8
+    table.insert(animalSounds, love.audio.newSource("audio/i.mp3","static"))--9
+    table.insert(animalSounds, love.audio.newSource("audio/c.mp3","static"))--10
+    table.insert(animalSounds, love.audio.newSource("audio/g.mp3","static"))--11
+    table.insert(animalSounds, love.audio.newSource("audio/j.mp3","static"))--12
+    table.insert(animalSounds, love.audio.newSource("audio/k.mp3","static"))--13
 
     --Backgrounds
     table.insert(images, CreateImageObject(Scenes.TITLE, "images/bgStart", 0, 0))
@@ -126,11 +143,19 @@ function C.playAudio(n)
     end
 end
 
+function C.playAnimalSound(i)
+    if soundOff then return end
+    animalSounds[i]:play()
+end
+
 function C.stopAudio()
     theme:stop()
     ooh:stop()
     tada:stop()
     womp:stop()
+    for k, v in ipairs(animalSounds) do
+        v:stop()
+    end
 end
 
 function C.isAnythingPlaying()

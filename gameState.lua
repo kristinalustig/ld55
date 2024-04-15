@@ -52,7 +52,7 @@ function G.load(db)
     if db and CurrentScene == Scenes.RUNES then
         isModal = nil
         currentLevel = 2
-    elseif CurrentScene == Scenes.ANIMALS then
+    elseif db and CurrentScene == Scenes.ANIMALS then
         A.markRescued(1)
         A.markRescued(2)
         A.markRescued(3)
@@ -88,7 +88,7 @@ function G.update()
 
     numRunePiecesUsed = C.getRunePiecesUsed(runePlacement)
 
-    if not C.isAnythingPlaying() then
+    if not C.isAnythingPlaying() and isModal == nil then
         C.playAudio(1)
     end
 
@@ -158,7 +158,11 @@ function G.handleMouseClick(mx, my)
                 if H.checkOverlap(love.mouse.getX(), love.mouse.getY(), a.x, a.x+(a.w*a.scaleMod*scale), a.y, a.y+(a.h*a.scaleMod*scale)) then
                     isModal = i
                     C.stopAudio()
-                    C.playAudio(2)
+                    if A.isDiscovered(i) then
+                        C.playAnimalSound(isModal)
+                    else
+                        C.playAudio(2)
+                    end
                     return
                 end
             end
@@ -401,6 +405,8 @@ function ResetAll(didFinish)
     if didFinish then
         A.markRescued(currentLevel)
         isModal = currentLevel
+        C.stopAudio()
+        C.playAnimalSound(isModal)
     end
     animStart = 0
     isAnimating = false
